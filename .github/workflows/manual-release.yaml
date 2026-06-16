@@ -1,0 +1,116 @@
+name: release-manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.5.15)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as prerelease?"
+        required: true
+        default: true
+        type: boolean
+      release_notes:
+        description: "Release description (Markdown supported). Leave blank to auto-generate."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: setup-node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: install
+        run: npm ci
+
+      - name: bump versions in json
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
+
+          const version = process.env.RELEASE_VERSION;
+
+          if (!version) {
+            console.error("Missing RELEASE_VERSION");
+            process.exit(1);
+          }
+
+          const readJson = (path) => JSON.parse(fs.readFileSync(path, "utf8"));
+          const writeJson = (path, data) =>
+            fs.writeFileSync(path, JSON.stringify(data, null, 4) + "\n");
+
+          const pkg = readJson("package.json");
+          pkg.version = version;
+          writeJson("package.json", pkg);
+
+          const lock = readJson("package-lock.json");
+          lock.version = version;
+          if (lock.packages?.[""]) {
+            lock.packages[""].version = version;
+          }
+          writeJson("package-lock.json", lock);
+
+          const manifest = readJson("manifest.json");
+          manifest.version = version;
+          writeJson("manifest.json", manifest);
+
+          const versions = readJson("versions.json");
+          versions[version] = manifest.minAppVersion;
+          writeJson("versions.json", versions);
+          NODE
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+
+      - name: commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json manifest.json versions.json
+          git commit -m "chore(release): ${{ inputs.version }}" || echo "No changes to commit"
+          git push
+
+      - name: create tag
+        run: |
+          git tag "${{ inputs.version }}"
+          git push origin "${{ inputs.version }}"
+
+      - name: build
+        run: npm run build
+
+      - name: verify artifacts
+        run: |
+          test -f main.js
+          test -f manifest.json
+          test -f styles.css
+
+      - name: create github release + upload assets
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: ${{ inputs.release_notes == '' }}
+          body: ${{ inputs.release_notes }}
+          files: |
+            main.js
+            manifest.json
+            styles.css
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
