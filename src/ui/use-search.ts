@@ -4,6 +4,7 @@ import { store } from "@/store";
 import { escapeHtml, getOrigin, htmlToText } from "@/utils/html";
 import { replaceInlineCalloutsWithText } from "@/utils/inline-callout";
 import { marked } from "marked";
+import { markdownCommentsToText } from "@/utils/markdown-comments";
 
 export function useOutlineSearch() {
     const pattern = ref("");
@@ -49,7 +50,10 @@ function simpleFilter(pattern: string, option: TreeOption): boolean {
  * @returns The textContent (**no sanitized!!!**)
  */
 function mdToHtmlTextContent(text: string | undefined) {
-    let result = marked.parse(replaceInlineCalloutsWithText(text), { async: false }).trim();
+    let result = marked.parse(
+        replaceInlineCalloutsWithText(markdownCommentsToText(text)),
+        { async: false },
+    ).trim();
 
     // save mjx elements
     let i = 0;

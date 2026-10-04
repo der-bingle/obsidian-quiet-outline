@@ -14,6 +14,14 @@
     --h6-color: inherit;
 }
 
+.quiet-outline .cm-comment {
+    font-family: var(--font-sans);
+    font-weight: 300;
+    color: inherit !important;
+    opacity: 0.7;
+    white-space-collapse: preserve;
+}
+
 /* ConfirmModal: improve spacing/typography for a cleaner layout */
 .quiet-outline-confirm-modal {
     /* Slightly increase line-height for multi-line warnings */

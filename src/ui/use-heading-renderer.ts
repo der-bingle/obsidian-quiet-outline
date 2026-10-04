@@ -5,6 +5,7 @@ import { marked } from "marked";
 import type QuietOutline from "@/plugin";
 import { store } from "@/store";
 import { postProcessInlineCallouts } from "@/utils/inline-callout";
+import { renderMarkdownComments } from "@/utils/markdown-comments";
 import { Icon } from "@vicons/utils";
 import { ArrowForwardIosRound, LocalIcon } from "./icons";
 import type { TreeOptionX } from "./types";
@@ -18,7 +19,7 @@ export function useOutlineRenderer(plugin: QuietOutline) {
     const renderLabel = computed<RenderMethodType>(() => {
         const renderer: RenderMethodType = store.markdown
             ? renderMarkdown
-            : ({ option }) => h("div", option.label);
+            : ({ option }) => renderPlainText(option.label);
 
         const method: RenderMethodType = ({ option }) => {
             if (option.key !== store.currentEditingKey) {
@@ -63,7 +64,7 @@ export function useOutlineRenderer(plugin: QuietOutline) {
 
 /** **SANITIZED** html string */
 function mdToHtml(label: string | undefined) {
-    let result = marked.parse(label || "", { async: false }).trim();
+    let result = marked.parse(renderMarkdownComments(label), { async: false }).trim();
 
     // save mjx elements
     let i = 0;
@@ -94,6 +95,19 @@ function renderMarkdown({ option }: { option: TreeOption; }) {
             postProcessInlineCallouts(vnode.el as HTMLElement);
         },
     });
+}
+
+function renderPlainText(label: string | undefined) {
+    const children: VNodeChild[] = [];
+    const parts = (label || "").split(/%%([\s\S]*?)%%/g);
+    parts.forEach((part, index) => {
+        if (index % 2 === 0) {
+            children.push(part);
+        } else {
+            children.push(h("span", { class: "cm-comment" }, part));
+        }
+    });
+    return h("div", children);
 }
 
 // switch icon
