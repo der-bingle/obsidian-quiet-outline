@@ -7,7 +7,7 @@ import type QuietOutline from "@/plugin";
 import { store } from "@/store";
 import { Nav } from "./base";
 import { calcModifies } from "@/utils/diff";
-import { parseMetaDataCache } from "@/utils/md-process";
+import { hasSmallHeadingBoundary, parseMetaDataCache } from "@/utils/md-process";
 import type { MarkdownHeading } from "./markdown";
 
 function getHeader(index: number) {
@@ -68,7 +68,13 @@ export class EmbedMarkdownFileNav extends Nav {
         const cache = this.plugin.app.metadataCache.getFileCache(
             this.view.file,
         );
-        return (cache?.headings || []).map((h) => ({ level: h.level, title: h.heading, line: h.position.start.line, position: h.position }));
+        const text = cache?.sections?.some(section => section.type === "html")
+            ? await this.plugin.app.vault.cachedRead(this.view.file)
+            : "";
+        const headings = hasSmallHeadingBoundary(text)
+            ? (await parseMetaDataCache(this.plugin.app, text)).headings
+            : cache?.headings;
+        return (headings || []).map((h) => ({ level: h.level, title: h.heading, line: h.position.start.line, position: h.position }));
     }
     async setHeaders(): Promise<void> {
         const headings = await this.getHeaders();

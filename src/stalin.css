@@ -4,8 +4,8 @@
     --custom-font-size: var(--nav-item-size);
     --custom-font-family: inherit;
     --custom-font-weight: inherit;
-    --custom-line-height: 1.6em;
-    --custom-line-gap: 0px;
+    --custom-line-height: 1.8em;
+    --custom-line-gap: var(--size-4-1);
     --h1-color: inherit;
     --h2-color: inherit;
     --h3-color: inherit;
@@ -294,6 +294,10 @@
 
 .quiet-outline .level-2 .n-tree-node-content {
     color: var(--h2-color);
+}
+
+.quiet-outline .n-tree-node.level-2 {
+    margin-top: var(--custom-line-gap);
 }
 
 .quiet-outline .level-3 .n-tree-node-content {

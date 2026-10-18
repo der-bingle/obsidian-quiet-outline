@@ -1,15 +1,69 @@
-import { App, type CachedMetadata } from "obsidian";
+import { App, type CachedMetadata, type Pos } from "obsidian";
 
-// a trick to use obsidian builtin function to parse markdown headings
+const smallHeadingBoundary = /^[^\r\n]*<\/small>[ \t]*\r?\n(?= {0,3}#{1,6}[ \t]+\S)/gim;
+
+export function hasSmallHeadingBoundary(text: string): boolean {
+    smallHeadingBoundary.lastIndex = 0;
+    return smallHeadingBoundary.test(text);
+}
+
+// Map metadata positions from the parsing copy back to the unchanged manuscript.
+function originalPosition(position: Pos, insertedOffsets: number[]): Pos {
+    const originalLocation = (location: Pos["start"]) => {
+        const insertedBefore = insertedOffsets.filter(offset => offset < location.offset).length;
+        return {
+            ...location,
+            line: location.line - insertedBefore,
+            offset: location.offset - insertedBefore,
+        };
+    };
+    return {
+        start: originalLocation(position.start),
+        end: originalLocation(position.end),
+    };
+}
+
+// Parse headings after multiline <small> recaps without changing the note itself.
 export async function parseMetaDataCache(
     app: App,
     text: string,
 ): Promise<CachedMetadata> {
-    const res = await app.metadataCache.computeMetadataAsync(
+    const original = await app.metadataCache.computeMetadataAsync(
         new TextEncoder().encode(text).buffer,
     );
-    // const res = await app.internalPlugins.plugins['canvas']._children[0].parseText(text)
-    return res;
+    if (!hasSmallHeadingBoundary(text)) return original;
+
+    smallHeadingBoundary.lastIndex = 0;
+    const boundaries = Array.from(text.matchAll(smallHeadingBoundary), match => {
+        const offset = match.index + match[0].length;
+        return { offset, line: text.slice(0, offset).split("\n").length - 1 };
+    }).filter(({ offset, line }) =>
+        !original.headings?.some(heading => heading.position.start.line === line)
+        && original.sections?.some(section => section.type === "html"
+            && section.position.start.offset <= offset
+            && section.position.end.offset >= offset),
+    );
+    if (boundaries.length === 0) return original;
+
+    let normalized = text;
+    for (const { offset } of [...boundaries].reverse()) {
+        normalized = normalized.slice(0, offset) + "\n" + normalized.slice(offset);
+    }
+    const insertedOffsets = boundaries.map(({ offset }, index) => offset + index);
+    const parsed = await app.metadataCache.computeMetadataAsync(
+        new TextEncoder().encode(normalized).buffer,
+    );
+    return {
+        ...original,
+        headings: parsed.headings?.map(heading => ({
+            ...heading,
+            position: originalPosition(heading.position, insertedOffsets),
+        })),
+        sections: parsed.sections?.map(section => ({
+            ...section,
+            position: originalPosition(section.position, insertedOffsets),
+        })),
+    };
 }
 
 type Content = {

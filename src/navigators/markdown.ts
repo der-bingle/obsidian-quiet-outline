@@ -15,6 +15,8 @@ import { Nav } from "./base";
 import { calcModifies } from "@/utils/diff";
 import {
     parseMarkdown,
+    parseMetaDataCache,
+    hasSmallHeadingBoundary,
     stringifySection,
     moveHeading,
     removeHeading,
@@ -52,7 +54,9 @@ export class MarkDownNav extends Nav {
             this.view.file,
         );
 
-        const headers = structuredClone(cache?.headings) || [];
+        const headers = hasSmallHeadingBoundary(this.view.data)
+            ? (await parseMetaDataCache(this.plugin.app, this.view.data)).headings || []
+            : structuredClone(cache?.headings) || [];
         return headers.map(cache => ({ title: cache.heading, level: cache.level, line: cache.position.start.line, position: cache.position }));
     }
 
