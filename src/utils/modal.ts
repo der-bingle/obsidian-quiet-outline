@@ -2,7 +2,7 @@ import { App, ButtonComponent, Modal, setIcon } from "obsidian";
 import { t } from "../lang/helper";
 
 /**
- * Confirm modal CSS class names (styles should live in `src/stalin.css`)
+ * Confirm modal CSS class names (styles should live in `src/quiet-outline.css`)
  * - Right-aligned buttons with spacing
  * - Vertically centered icon and text
  */

@@ -22,7 +22,7 @@ import { DataManager } from "./utils/data-manager";
 import { registerCommands } from "./commands";
 import { eventBus } from "./utils/event-bus";
 
-import "./stalin.css";
+import "./quiet-outline.css";
 import { Deferred } from "./utils/promise";
 
 type LeafEphemeralState = Record<string, unknown> | undefined;

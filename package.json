@@ -1,7 +1,7 @@
 {
     "name": "obsidian-quiet-outline",
     "version": "0.5.17",
-    "description": "Make outline quiet and more powerful, including no-auto-expand, rendering heading as markdown, and search support.",
+    "description": "Browse and search collapsible outlines for Markdown, Canvas, PDF, and Kanban views, with rendered headings and Inline Callouts icons.",
     "main": "main.js",
     "scripts": {
         "build": "npm run check && npm run lint && vite build --mode production",
@@ -19,7 +19,7 @@
         "obsidian",
         "outline"
     ],
-    "author": "the_tree",
+    "author": "the_tree & Luke Wilson",
     "license": "MIT",
     "dependencies": {
         "@codemirror/view": "^6.38.6",
