@@ -1,7 +1,7 @@
 {
     "id": "obsidian-quiet-outline",
     "name": "Quiet Outline (Luke’s Fork)",
-    "version": "0.5.17",
+    "version": "0.5.18",
     "minAppVersion": "1.7.2",
     "description": "Browse and search collapsible outlines for Markdown, Canvas, PDF, and Kanban views, with rendered headings and Inline Callouts icons.",
     "author": "the_tree & Luke Wilson",
